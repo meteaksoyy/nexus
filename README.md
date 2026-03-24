@@ -33,12 +33,12 @@ Client ──► /auth/*  ──────┤  Auth handlers (no middleware)  
                           │                                 │
 Client ──► /api/v1/* ─────┤  JWT / API key middleware       │
            /graphql       │         │                       │
-                          │  Rate limit middleware           │
+                          │  Rate limit middleware          │
                           │         │                       │
-                          │  Cache middleware                │
-                          │    (singleflight + Redis)        │
+                          │  Cache middleware               │
+                          │    (singleflight + Redis)       │
                           │         │                       │
-                          │  Circuit breaker                 │
+                          │  Circuit breaker                │
                           │         │                       │
                           └─────────┼───────────────────────┘
                                     │
