@@ -20,6 +20,10 @@ type Config struct {
 
 	GithubToken string
 
+	IBKRGatewayURL string
+	IBKRUsername   string
+	IBKRPassword   string
+
 	RateLimitAuthed int
 	RateLimitAPIKey int
 	RateLimitWindow time.Duration
@@ -37,6 +41,9 @@ func Load() *Config {
 		DatabaseURL:      mustEnv("DATABASE_URL"),
 		RedisURL:         getEnv("REDIS_URL", "redis://localhost:6379"),
 		GithubToken:      getEnv("GITHUB_TOKEN", ""),
+		IBKRGatewayURL:   getEnv("IBKR_GATEWAY_URL", "https://localhost:5000"),
+		IBKRUsername:     getEnv("IBKR_USERNAME", ""),
+		IBKRPassword:     getEnv("IBKR_PASSWORD", ""),
 		RateLimitAuthed:  getEnvInt("RATE_LIMIT_AUTHED", 100),
 		RateLimitAPIKey:  getEnvInt("RATE_LIMIT_APIKEY", 500),
 		RateLimitWindow:  time.Duration(getEnvInt("RATE_LIMIT_WINDOW_SECONDS", 60)) * time.Second,

@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
-	"github.com/user/nexus/config"
-	"github.com/user/nexus/internal/cache"
-	"github.com/user/nexus/internal/db"
-	"github.com/user/nexus/internal/gateway"
-	"github.com/user/nexus/internal/tracing"
+	"github.com/meteaksoyy/nexus/config"
+	"github.com/meteaksoyy/nexus/internal/cache"
+	"github.com/meteaksoyy/nexus/internal/db"
+	"github.com/meteaksoyy/nexus/internal/gateway"
+	"github.com/meteaksoyy/nexus/internal/ibkr"
+	"github.com/meteaksoyy/nexus/internal/tracing"
 )
 
 func main() {
@@ -25,19 +26,21 @@ func main() {
 		log = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
+	ctx := context.Background()
+
 	// Tracing
-	tp, err := tracing.Init(cfg)
+	shutdownTracing, err := tracing.Init(ctx, cfg.OTELEndpoint)
 	if err != nil {
 		log.Fatal().Err(err).Msg("init tracing")
 	}
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		tctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_ = tp.Shutdown(ctx)
+		_ = shutdownTracing(tctx)
 	}()
 
 	// Database
-	pool, err := db.NewPool(context.Background(), cfg)
+	pool, err := db.NewPool(ctx, cfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("connect postgres")
 	}
@@ -50,8 +53,15 @@ func main() {
 	}
 	defer rdb.Close()
 
+	// IBKR Client Portal Gateway
+	ibkrClient := ibkr.New(cfg.IBKRGatewayURL, cfg.IBKRUsername, cfg.IBKRPassword, log)
+	if err := ibkrClient.Start(ctx); err != nil {
+		log.Fatal().Err(err).Msg("start ibkr client")
+	}
+	defer ibkrClient.Stop()
+
 	// Router
-	r := gateway.NewRouter(cfg, pool, rdb, log)
+	r := gateway.NewRouter(cfg, pool, rdb, ibkrClient, log)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
@@ -74,10 +84,10 @@ func main() {
 
 	log.Info().Msg("shutdown signal received — draining connections")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	shutCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutCtx); err != nil {
 		log.Error().Err(err).Msg("graceful shutdown failed")
 	}
 
