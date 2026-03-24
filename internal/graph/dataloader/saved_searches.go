@@ -21,8 +21,8 @@ func New(q *queries.SavedSearchQueries) *Loader {
 	batchFn := func(ctx context.Context, keys []string) []*dataloader.Result[[]db.SavedSearch] {
 		results := make([]*dataloader.Result[[]db.SavedSearch], len(keys))
 
-		// Fetch all saved searches for all user IDs in one query.
-		all, err := q.GetSavedSearchesByUserIDs(ctx, keys)
+		// Fetch all saved searches for all user IDs in one query (returns map[userID][]SavedSearch).
+		byUser, err := q.GetSavedSearchesByUserIDs(ctx, keys)
 		if err != nil {
 			for i := range results {
 				results[i] = &dataloader.Result[[]db.SavedSearch]{Error: err}
@@ -30,11 +30,6 @@ func New(q *queries.SavedSearchQueries) *Loader {
 			return results
 		}
 
-		// Group by user ID.
-		byUser := make(map[string][]db.SavedSearch, len(keys))
-		for _, s := range all {
-			byUser[s.UserID] = append(byUser[s.UserID], s)
-		}
 		for i, key := range keys {
 			results[i] = &dataloader.Result[[]db.SavedSearch]{Data: byUser[key]}
 		}

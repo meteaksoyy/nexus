@@ -35,7 +35,7 @@ func (r *UserResolver) User(ctx context.Context, args struct{ ID string }) (*Use
 	if err != nil {
 		return nil, fmt.Errorf("user not found")
 	}
-	return &UserObject{user: u, saves: r.saves}, nil
+	return &UserObject{user: &u, saves: r.saves}, nil
 }
 
 func (r *UserResolver) Me(ctx context.Context) (*UserObject, error) {
@@ -47,7 +47,7 @@ func (r *UserResolver) Me(ctx context.Context) (*UserObject, error) {
 	if err != nil {
 		return nil, fmt.Errorf("user not found")
 	}
-	return &UserObject{user: u, saves: r.saves}, nil
+	return &UserObject{user: &u, saves: r.saves}, nil
 }
 
 // ── Mutation resolvers ───────────────────────────────────────────────────────
@@ -58,12 +58,12 @@ func (r *UserResolver) CreateUser(ctx context.Context, args struct {
 		Password string
 	}
 }) (*UserObject, error) {
-	u, err := r.users.CreateUser(ctx, args.Input.Email, args.Input.Password)
+	u, err := r.users.CreateUser(ctx, args.Input.Email, args.Input.Password, "user")
 	if err != nil {
 		r.log.Warn().Err(err).Msg("create user failed")
 		return nil, fmt.Errorf("could not create user")
 	}
-	return &UserObject{user: u, saves: r.saves}, nil
+	return &UserObject{user: &u, saves: r.saves}, nil
 }
 
 func (r *UserResolver) SaveSearch(ctx context.Context, args struct{ Query string }) (*SavedSearchObject, error) {
@@ -75,7 +75,7 @@ func (r *UserResolver) SaveSearch(ctx context.Context, args struct{ Query string
 	if err != nil {
 		return nil, fmt.Errorf("could not save search")
 	}
-	return &SavedSearchObject{s: s}, nil
+	return &SavedSearchObject{s: &s}, nil
 }
 
 // ── Object resolvers ─────────────────────────────────────────────────────────

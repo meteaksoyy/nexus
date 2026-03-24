@@ -9,12 +9,15 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
 
 	"github.com/meteaksoyy/nexus/config"
 	"github.com/meteaksoyy/nexus/internal/auth"
 	"github.com/meteaksoyy/nexus/internal/cache"
+	"github.com/meteaksoyy/nexus/internal/db/queries"
 	"github.com/meteaksoyy/nexus/internal/gateway/rest"
 	graph "github.com/meteaksoyy/nexus/internal/graph"
 	"github.com/meteaksoyy/nexus/internal/graph/dataloader"
@@ -23,12 +26,6 @@ import (
 	"github.com/meteaksoyy/nexus/internal/metrics"
 	"github.com/meteaksoyy/nexus/internal/ratelimit"
 	"github.com/meteaksoyy/nexus/internal/upstream"
-
-	"github.com/redis/go-redis/v9"
-	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/meteaksoyy/nexus/internal/db/queries"
-	dbauth "github.com/meteaksoyy/nexus/internal/auth"
 )
 
 // NewRouter wires together all middleware and handlers into a chi router.
@@ -56,10 +53,12 @@ func NewRouter(
 	refreshQ := queries.NewRefreshTokenQueries(pool)
 
 	denylist := auth.NewDenylist(rdb)
-	refreshSvc := auth.NewRefreshService(refreshQ)
+	refreshSvc := auth.NewRefreshService(refreshQ, cfg.JWTRefreshDays)
 	apiKeySvc := auth.NewAPIKeyService(apiKeyQ)
 
-	authHandlers := auth.NewHandlers(userQ, apiKeySvc, refreshSvc, denylist, cfg, log)
+	authHandlers := auth.NewHandlers(userQ, apiKeySvc, refreshSvc, denylist, cfg.JWTSecret, cfg.JWTExpiryMinutes, log)
+
+	authMw := auth.NewMiddleware(cfg.JWTSecret, denylist, apiKeySvc, log)
 
 	cacheMw := cache.NewMiddleware(rdb)
 	sw := ratelimit.NewSlidingWindow(rdb, cfg.RateLimitAuthed, cfg.RateLimitWindow)
@@ -73,14 +72,14 @@ func NewRouter(
 		r.Post("/register", authHandlers.Register)
 		r.Post("/token", authHandlers.Token)
 		r.Post("/refresh", authHandlers.Refresh)
-		r.Post("/logout", auth.Middleware(cfg, denylist)(http.HandlerFunc(authHandlers.Logout)).ServeHTTP)
-		r.Post("/apikey", auth.Middleware(cfg, denylist)(http.HandlerFunc(authHandlers.CreateAPIKey)).ServeHTTP)
-		r.Delete("/apikey/{id}", auth.Middleware(cfg, denylist)(http.HandlerFunc(authHandlers.DeleteAPIKey)).ServeHTTP)
+		r.Post("/logout", authMw.Handler(http.HandlerFunc(authHandlers.Logout)).ServeHTTP)
+		r.Post("/apikey", authMw.Handler(http.HandlerFunc(authHandlers.CreateAPIKey)).ServeHTTP)
+		r.Delete("/apikey/{id}", authMw.Handler(http.HandlerFunc(authHandlers.DeleteAPIKey)).ServeHTTP)
 	})
 
 	// ── Authenticated API routes ──────────────────────────────────────────────
 	r.Group(func(r chi.Router) {
-		r.Use(dbauth.Middleware(cfg, denylist))
+		r.Use(authMw.Handler)
 		r.Use(ratelimit.Middleware(cfg, sw))
 
 		// GitHub endpoints (cached)

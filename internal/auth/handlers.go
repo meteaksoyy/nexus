@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/meteaksoyy/nexus/internal/db/queries"
 )
 
 // Handlers exposes HTTP handlers for auth endpoints.

@@ -1,12 +1,7 @@
 package gateway
 
-import (
-	_ "embed"
-)
-
-//go:embed ../graph/schema.graphql
-var schemaFile []byte
+import "github.com/meteaksoyy/nexus/internal/graph"
 
 func mustReadSchema() []byte {
-	return schemaFile
+	return graph.SchemaBytes
 }

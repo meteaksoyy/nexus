@@ -2,6 +2,8 @@ package ratelimit
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -65,9 +67,11 @@ func (s *SlidingWindow) Allow(ctx context.Context, clientID string) (bool, int, 
 		return false, 0, retryAfter, nil
 	}
 
-	// Record this request — use nanosecond timestamp as both score and member
-	// (appending a unique suffix to handle sub-nanosecond clock resolution)
-	member := fmt.Sprintf("%d-%s", now.UnixNano(), clientID[:min(8, len(clientID))])
+	// Record this request — use nanosecond timestamp as score; add random suffix
+	// so that concurrent requests at the same nanosecond get distinct members.
+	var rndBuf [4]byte
+	rand.Read(rndBuf[:]) //nolint:errcheck
+	member := fmt.Sprintf("%d-%s", now.UnixNano(), hex.EncodeToString(rndBuf[:]))
 	pipe2 := s.rdb.Pipeline()
 	pipe2.ZAdd(ctx, key, redis.Z{Score: float64(now.UnixNano()), Member: member})
 	pipe2.Expire(ctx, key, s.window+time.Second) // auto-expire the key
