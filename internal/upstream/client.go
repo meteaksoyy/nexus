@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/user/nexus/internal/circuit"
+	"github.com/meteaksoyy/nexus/internal/circuit"
 )
 
 const (

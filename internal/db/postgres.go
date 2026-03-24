@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/user/nexus/config"
+	"github.com/meteaksoyy/nexus/config"
 )
 
 // NewPool creates a pgx connection pool and verifies connectivity.

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/user/nexus/internal/db"
+	"github.com/meteaksoyy/nexus/internal/db"
 )
 
 type RefreshTokenQueries struct{ pool *pgxpool.Pool }

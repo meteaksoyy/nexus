@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/user/nexus/internal/db"
+	"github.com/meteaksoyy/nexus/internal/db"
 )
 
 type APIKeyQueries struct{ pool *pgxpool.Pool }

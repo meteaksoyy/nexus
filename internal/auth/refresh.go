@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/user/nexus/internal/db"
-	"github.com/user/nexus/internal/db/queries"
+	"github.com/meteaksoyy/nexus/internal/db"
+	"github.com/meteaksoyy/nexus/internal/db/queries"
 )
 
 // RefreshService handles refresh token issuance and rotation.

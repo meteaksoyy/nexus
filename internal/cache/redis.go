@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/user/nexus/config"
+	"github.com/meteaksoyy/nexus/config"
 )
 
 // NewClient parses REDIS_URL and returns a connected Redis client.

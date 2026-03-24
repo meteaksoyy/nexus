@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/user/nexus/internal/db"
-	"github.com/user/nexus/internal/db/queries"
+	"github.com/meteaksoyy/nexus/internal/db"
+	"github.com/meteaksoyy/nexus/internal/db/queries"
 )
 
 // APIKeyService handles creation and validation of API keys.
