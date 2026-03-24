@@ -1,0 +1,102 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  # User queries (Postgres)
+  user(id: ID!): User
+  me: User
+
+  # GitHub queries (upstream + cached)
+  githubUser(login: String!): GitHubUser
+  githubRepo(owner: String!, name: String!): GitHubRepo
+
+  # Market data queries (IBKR Client Portal Gateway + cached)
+  quote(symbol: String!): MarketQuote
+  marketHistory(symbol: String!, period: String, bar: String): MarketHistory
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  saveSearch(query: String!): SavedSearch!
+}
+
+# ── User ──────────────────────────────────────────────────────────────────────
+
+type User {
+  id: ID!
+  email: String!
+  role: String!
+  createdAt: String!
+  savedSearches: [SavedSearch!]!
+}
+
+type SavedSearch {
+  id: ID!
+  query: String!
+  createdAt: String!
+}
+
+input CreateUserInput {
+  email: String!
+  password: String!
+}
+
+# ── GitHub ────────────────────────────────────────────────────────────────────
+
+type GitHubUser {
+  login: String!
+  name: String
+  bio: String
+  publicRepos: Int!
+  followers: Int!
+  avatarUrl: String
+}
+
+type GitHubRepo {
+  name: String!
+  fullName: String!
+  description: String
+  stars: Int!
+  forks: Int!
+  language: String
+  openIssues: Int!
+  htmlUrl: String!
+}
+
+# ── Market Data (IBKR) ────────────────────────────────────────────────────────
+
+type MarketQuote {
+  symbol: String!
+  last: Float!
+  bid: Float!
+  ask: Float!
+  change: Float!
+  changePct: Float!
+  volume: Float!
+  currency: String!
+}
+
+type OHLCVBar {
+  time: String!
+  open: Float!
+  high: Float!
+  low: Float!
+  close: Float!
+  volume: Float!
+}
+
+type MarketHistory {
+  symbol: String!
+  bars: [OHLCVBar!]!
+}
+
+type ContractInfo {
+  conid: Int!
+  symbol: String!
+  name: String!
+  exchange: String!
+  currency: String!
+  secType: String!
+}
